@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보 이슈 점검</title>
+<style>
+  :root {
+    --bg: #ffffff; --panel: #f6f7f9; --line: #dfe3e8; --text: #1c2430; --sub: #5b6573;
+    --brand: #2b5cff; --brand-soft: #e9efff;
+    --high: #d92d20; --high-soft: #fdecea;
+    --mid: #c26a00; --mid-soft: #fff3e0;
+    --low: #1a7f4b; --low-soft: #e6f6ed;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 -apple-system, "Pretendard", "Noto Sans KR", "Malgun Gothic", sans-serif; }
+  header { border-bottom: 1px solid var(--line); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; }
+  header .note { font-size: 13px; color: var(--sub); }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+  h2 { font-size: 22px; margin: 0 0 6px; }
+  h3 { font-size: 17px; margin: 0 0 8px; }
+  p { margin: 0 0 12px; }
+  .sub { color: var(--sub); font-size: 14px; }
+  .banner { background: var(--brand-soft); border-radius: var(--radius); padding: 12px 16px; font-size: 14px; margin-bottom: 20px; }
+  label.field { display: block; margin-bottom: 16px; font-weight: 600; }
+  label.field span.hint { font-weight: 400; color: var(--sub); font-size: 13px; display: block; }
+  input[type=text], textarea { width: 100%; margin-top: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+  textarea { min-height: 84px; resize: vertical; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); background: #fff; padding: 10px 18px; color: var(--text); }
+  button.primary { background: var(--brand); border-color: var(--brand); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .choice:focus-within { outline: 3px solid #8fb0ff; outline-offset: 1px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .grid { display: grid; grid-template-columns: 230px minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+  .card { background: var(--panel); border-radius: var(--radius); padding: 16px; }
+  .cat { display: block; width: 100%; text-align: left; margin-bottom: 8px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); }
+  .cat.active { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+  .cat .meta { font-size: 12px; color: var(--sub); display: flex; justify-content: space-between; margin-top: 2px; }
+  .q { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+  .q .title { font-weight: 600; margin-bottom: 4px; }
+  .q .help { font-size: 13px; color: var(--sub); margin-bottom: 10px; }
+  .choice { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; }
+  .choice:hover { background: var(--panel); }
+  .choice input { margin-top: 5px; }
+  .choice.sel { background: var(--brand-soft); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+  .badge.high { background: var(--high-soft); color: var(--high); }
+  .badge.mid { background: var(--mid-soft); color: var(--mid); }
+  .badge.low { background: var(--low-soft); color: var(--low); }
+  .badge.none { background: var(--panel); color: var(--sub); }
+  .risk-big { font-size: 34px; font-weight: 800; margin: 4px 0; }
+  .risk-big.high { color: var(--high); } .risk-big.mid { color: var(--mid); } .risk-big.low { color: var(--low); } .risk-big.none { color: var(--sub); }
+  .fix { border-left: 4px solid var(--mid); background: var(--mid-soft); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; font-size: 14px; }
+  .fix.high { border-color: var(--high); background: var(--high-soft); }
+  .fix b { display: block; margin-bottom: 2px; }
+  details.example { border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; background: #fff; }
+  details.example summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+  details.example ul { margin: 8px 0 2px; padding-left: 20px; font-size: 14px; }
+  .progress { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 6px 0 14px; }
+  .progress > div { height: 100%; background: var(--brand); }
+  .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 14px 0 20px; }
+  .tile { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; background: #fff; }
+  .tile .name { font-weight: 600; margin-bottom: 6px; }
+  .confirm { border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-top: 20px; }
+  .confirm label { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 14px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } main { padding: 16px; } header { padding: 12px 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>개인정보 이슈 점검</h1>
+  <span class="note">사전 점검용 도구입니다. 법적 판단이 아니며, 최종 판단은 개인정보보호팀과 Privacy &amp; Compliance팀에 있습니다.</span>
+</header>
+<main id="app"></main>
+
+<script>
+/* ---------- 데이터 ---------- */
+// risk: ok(문제 없음) | mid(보완 필요) | high(위험) | unk(모름)
+const UNK = { value: 'unk', label: '모름 / 담당자 확인 필요', risk: 'unk' };
+const YN = (yes, no) => [
+  { value: 'yes', label: '예', risk: yes },
+  { value: 'no', label: '아니오', risk: no },
+  UNK,
+];
+
+const CATEGORIES = [
+  { id: 'collect', name: '수집 항목' },
+  { id: 'consent', name: '이용 목적·동의' },
+  { id: 'retain', name: '보관·파기' },
+  { id: 'share', name: '제3자 제공·위탁' },
+  { id: 'auto', name: '자동화된 추천·결정' },
+];
+
+const QUESTIONS = [
+  { id: 'q1', cat: 'collect', multi: true,
+    title: '이 서비스가 사용하는 데이터를 모두 골라 주세요.',
+    help: '해당하는 것은 모두 선택하세요. 선택한 것 중 가장 높은 위험도로 판정합니다.',
+    choices: [
+      { value: 'watch', label: '시청 이력 (채널·VOD·시청 시간)', risk: 'mid' },
+      { value: 'profile', label: '프로필·가구 구성 (연령대, 가족 구성 등)', risk: 'mid' },
+      { value: 'voice', label: '음성 명령·음성 녹음', risk: 'high' },
+      { value: 'location', label: '위치 정보 (거주지, 접속 위치)', risk: 'high' },
+      { value: 'combine', label: '다른 서비스(모바일·인터넷 등)와 결합한 데이터', risk: 'high' },
+      { value: 'none', label: '개인을 식별하지 않는 통계 데이터만 사용', risk: 'ok' },
+      UNK,
+    ],
+    fix: '사용하는 데이터 유형별로 수집 근거를 정리하세요. 음성·위치·결합 데이터는 담당 부서에 먼저 확인이 필요합니다.' },
+  { id: 'q2', cat: 'collect',
+    title: '서비스 목적에 꼭 필요한 데이터만 수집하나요?',
+    help: '"있으면 좋은 데이터"까지 모으지 않았는지 확인하세요.',
+    choices: YN('ok', 'high'),
+    fix: '목적에 필요 없는 항목은 수집 대상에서 빼고, 필요한 이유를 항목별로 한 줄씩 적어 두세요.' },
+  { id: 'q3', cat: 'collect',
+    title: '만 14세 미만 이용자의 데이터가 포함되나요?',
+    help: '가족 프로필, 키즈 프로필 등에서 포함될 수 있습니다.',
+    choices: YN('high', 'ok'),
+    fix: '아동 데이터가 포함되면 법정대리인 동의 절차와 별도 보호 조치가 필요합니다. 담당 부서 확인 전에는 설계를 확정하지 마세요.' },
+  { id: 'q4', cat: 'collect',
+    title: '시청 패턴으로 건강, 종교, 성적 지향 같은 민감한 정보를 추정할 수 있나요?',
+    help: '특정 콘텐츠를 많이 보는 패턴이 민감한 특성을 드러낼 수 있습니다.',
+    choices: YN('high', 'ok'),
+    fix: '민감한 특성을 추정하거나 추천에 쓰지 않도록 제외 기준을 정하세요.' },
+
+  { id: 'q5', cat: 'consent',
+    title: '개인화 목적이 이용자가 이미 동의한 범위 안에 있나요?',
+    help: '기존 약관·동의서에 적힌 이용 목적과 비교해 보세요.',
+    choices: YN('ok', 'high'),
+    fix: '동의 범위를 벗어나는 목적이면 새로운 동의를 받아야 합니다. 현재 동의 문구와 비교한 내용을 담당 부서에 전달하세요.' },
+  { id: 'q6', cat: 'consent',
+    title: '개인화에 대한 별도의 선택 동의 화면이 설계되어 있나요?',
+    help: '필수 동의에 묶지 않고 선택 항목으로 분리했는지 확인하세요.',
+    choices: YN('ok', 'mid'),
+    fix: '개인화는 필수 동의와 분리해 선택 동의로 설계하고, 동의 화면 문구 초안을 만들어 두세요.' },
+  { id: 'q7', cat: 'consent',
+    title: '이용자가 동의를 철회하면 개인화를 끌 수 있나요?',
+    help: '설정 메뉴에서 쉽게 끌 수 있고, 꺼도 기본 서비스는 이용 가능해야 합니다.',
+    choices: YN('ok', 'high'),
+    fix: '동의 철회 경로(설정 메뉴 위치)와 철회 후 서비스 상태를 화면 흐름에 추가하세요.' },
+
+  { id: 'q8', cat: 'retain',
+    title: '데이터 보관 기간이 정해져 있나요?',
+    help: '"서비스 종료 시까지"처럼 막연한 기간은 피하세요.',
+    choices: YN('ok', 'mid'),
+    fix: '데이터 유형별 보관 기간과 근거를 정하세요. 정하기 어려우면 담당 부서에 기준을 문의하세요.' },
+  { id: 'q9', cat: 'retain',
+    title: '해지·동의 철회 시 데이터를 삭제하거나 파기하는 규칙이 있나요?',
+    help: '삭제 시점, 삭제 대상, 백업 처리까지 포함합니다.',
+    choices: YN('ok', 'high'),
+    fix: '해지·철회 시 삭제 시점과 대상(원본, 학습 데이터, 백업)을 규칙으로 적어 두세요.' },
+
+  { id: 'q10', cat: 'share',
+    title: '외부 업체에 데이터를 제공하거나 처리를 맡기나요? (AI 모델 업체, 광고, 분석 도구 등)',
+    help: '제공과 위탁은 요건이 다릅니다. 어느 쪽인지 모르면 "모름"을 고르세요.',
+    choices: [
+      { value: 'no', label: '아니오, 내부에서만 처리', risk: 'ok' },
+      { value: 'delegate', label: '처리를 맡긴다 (위탁)', risk: 'mid' },
+      { value: 'provide', label: '데이터를 제공한다 (제3자 제공)', risk: 'high' },
+      UNK,
+    ],
+    fix: '외부 업체 이름, 받는 데이터, 목적을 표로 정리하세요. 위탁·제공 여부는 담당 부서가 판단합니다.' },
+  { id: 'q11', cat: 'share',
+    title: '데이터가 해외 서버나 해외 서비스(클라우드, 외부 AI API)로 전달되나요?',
+    help: '해외 이전이 있으면 별도 고지와 동의가 필요할 수 있습니다.',
+    choices: YN('high', 'ok'),
+    fix: '이전되는 국가, 업체, 항목을 정리해 Privacy & Compliance팀에 확인을 요청하세요.' },
+
+  { id: 'q12', cat: 'auto',
+    title: '개인 식별 정보를 가리거나 바꾸는 처리(가명·익명 처리)를 하나요?',
+    help: '분석·학습에 쓰기 전에 이름, 가입자 번호 등을 분리하는지 확인하세요.',
+    choices: YN('ok', 'mid'),
+    fix: '분석·학습용 데이터는 가입자 식별 정보를 분리하는 방식을 정하세요. 처리 수준은 담당 부서와 확인합니다.' },
+  { id: 'q13', cat: 'auto',
+    title: '추천 결과의 이유를 보여 주거나, 이용자가 추천을 거부·초기화할 수 있나요?',
+    help: '"이 콘텐츠를 추천하는 이유", "추천 초기화" 같은 기능입니다.',
+    choices: YN('ok', 'mid'),
+    fix: '추천 이유 표시와 추천 초기화·거부 기능을 화면 흐름에 추가하는 것을 검토하세요.' },
+];
+
+const EXAMPLES = [
+  { title: '시청 이력', items: [
+    '시청 기록은 취향뿐 아니라 생활 패턴(귀가 시간 등)을 드러낼 수 있어요.',
+    '가족이 함께 쓰는 TV라 개인별 기록이 섞이면 의도하지 않은 추천이 노출될 수 있어요.',
+    '보관 기간을 정하지 않은 장기 보관이 가장 흔한 지적이에요.'] },
+  { title: '프로필·가구 구성', items: [
+    '키즈 프로필이 있으면 만 14세 미만 데이터 이슈가 생겨요.',
+    '가구 구성 추정(자녀 유무 등)은 이용자가 직접 입력하지 않았다면 설명이 필요해요.'] },
+  { title: '음성 명령', items: [
+    '음성 녹음 저장 여부와 보관 기간을 따로 정해야 해요.',
+    '호출어 인식 전 소리가 수집되지 않는지 확인이 필요해요.'] },
+  { title: '결합 데이터', items: [
+    '모바일·인터넷 이용 정보와 합치면 기존 동의 범위를 넘는 경우가 많아요.',
+    '결합 목적과 결합 후 보관 위치를 별도로 정리해야 해요.'] },
+  { title: '외부 AI·광고 업체', items: [
+    '추천 모델을 외부 업체에서 학습·운영하면 위탁 또는 제공 여부를 판단해야 해요.',
+    '해외 서버를 쓰면 이전 고지·동의 이슈가 추가돼요.'] },
+];
+
+const STORE = 'privacy-check-v1';
+
+/* ---------- 상태 ---------- */
+const blank = () => ({ screen: 'start', cat: 0, service: { name: '', desc: '', data: '' }, answers: {}, teams: { priv: false, pc: false }, done: false });
+let S = load();
+function load() { try { return Object.assign(blank(), JSON.parse(localStorage.getItem(STORE) || '{}')); } catch (e) { return blank(); } }
+function save() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {} }
+
+/* ---------- 판정 ---------- */
+const RANK = { ok: 0, unk: 1, mid: 2, high: 3 };
+function evalQ(q) {
+  const a = S.answers[q.id];
+  if (a === undefined || (Array.isArray(a) && !a.length)) return 'blank';
+  const vals = Array.isArray(a) ? a : [a];
+  let worst = 'ok';
+  vals.forEach(v => { const c = q.choices.find(c => c.value === v); if (c && RANK[c.risk] > RANK[worst]) worst = c.risk; });
+  return worst;
+}
+const needsFix = st => st !== 'ok';
+function evalCat(cat) {
+  const qs = QUESTIONS.filter(q => q.cat === cat.id);
+  const states = qs.map(evalQ);
+  const answered = states.filter(s => s !== 'blank').length;
+  let level = 'low';
+  if (states.some(s => s === 'high')) level = 'high';
+  else if (states.some(needsFix)) level = 'mid';
+  return { qs, states, answered, total: qs.length, level };
+}
+function overall() {
+  const cats = CATEGORIES.map(evalCat);
+  const answered = cats.reduce((n, c) => n + c.answered, 0);
+  let level = 'low';
+  if (cats.some(c => c.level === 'high')) level = 'high';
+  else if (cats.some(c => c.level === 'mid')) level = 'mid';
+  if (!answered) level = 'none';
+  return { cats, answered, total: QUESTIONS.length, level };
+}
+const LV = { high: '상', mid: '중', low: '하', none: '미점검' };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- 화면 ---------- */
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = S.screen === 'start' ? startView() : S.screen === 'q' ? questionView() : resultView();
+  save();
+}
+
+function startView() {
+  const resumable = Object.keys(S.answers).length > 0;
+  return `
+  <h2>어떤 서비스를 점검할까요?</h2>
+  <p class="sub">서비스 개요를 간단히 적어 주세요. 이어서 5개 영역, 13개 질문에 답하면 위험도와 보완할 점을 알려 드려요.</p>
+  <div class="banner">전문 지식이 없어도 괜찮아요. 모르는 질문은 "모름 / 담당자 확인 필요"를 고르면 보완 항목으로 정리돼요. 입력한 내용은 이 브라우저에만 저장돼요.</div>
+  <label class="field">서비스 이름
+    <input type="text" data-field="name" value="${esc(S.service.name)}" placeholder="예: 시청 이력 기반 맞춤 추천">
+  </label>
+  <label class="field">개인화 방식
+    <span class="hint">어떤 데이터로 무엇을 개인화하는지 한두 줄로 적어 주세요.</span>
+    <textarea data-field="desc" placeholder="예: 최근 시청한 VOD를 바탕으로 홈 화면 추천 순서를 바꾼다.">${esc(S.service.desc)}</textarea>
+  </label>
+  <div class="row">
+    <button class="primary" data-action="begin">${resumable ? '이어서 점검하기' : '점검 시작'}</button>
+    ${resumable ? '<button data-action="reset">처음부터 다시</button>' : ''}
+  </div>`;
+}
+
+function questionView() {
+  const o = overall();
+  const cat = CATEGORIES[S.cat];
+  const qs = QUESTIONS.filter(q => q.cat === cat.id);
+  const pct = Math.round(o.answered / o.total * 100);
+  const last = S.cat === CATEGORIES.length - 1;
+  return `
+  <div class="grid">
+    <nav aria-label="점검 영역">
+      ${CATEGORIES.map((c, i) => {
+        const e = o.cats[i];
+        return `<button class="cat ${i === S.cat ? 'active' : ''}" data-action="goto" data-i="${i}">
+          <div>${i + 1}. ${c.name}</div>
+          <div class="meta"><span>${e.answered}/${e.total} 응답</span>${e.answered ? `<span class="badge ${e.level}">${LV[e.level]}</span>` : ''}</div>
+        </button>`;
+      }).join('')}
+    </nav>
+    <section>
+      <h2>${S.cat + 1}. ${cat.name}</h2>
+      <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
+      ${qs.map(q => qHtml(q)).join('')}
+      <div class="row">
+        <button data-action="prev" ${S.cat === 0 ? 'disabled' : ''}>이전</button>
+        <button class="primary" data-action="${last ? 'finish' : 'next'}">${last ? '결과 보기' : '다음'}</button>
+      </div>
+    </section>
+    <aside class="card">
+      <h3>누적 결과</h3>
+      <div class="risk-big ${o.level}">${LV[o.level]}</div>
+      <p class="sub">${o.answered}/${o.total} 응답 · 보완 필요 ${QUESTIONS.filter(q => needsFix(evalQ(q))).length}건<br>(미응답 포함)</p>
+      <h3 style="margin-top:18px">IPTV 개인화 예시</h3>
+      ${EXAMPLES.map(e => `<details class="example"><summary>${e.title}</summary><ul>${e.items.map(i => `<li>${i}</li>`).join('')}</ul></details>`).join('')}
+    </aside>
+  </div>`;
+}
+
+function qHtml(q) {
+  const a = S.answers[q.id];
+  const sel = v => Array.isArray(a) ? a.includes(v) : a === v;
+  return `
+  <div class="q">
+    <div class="title">${esc(q.title)}</div>
+    <div class="help">${esc(q.help)}</div>
+    ${q.choices.map(c => `
+      <label class="choice ${sel(c.value) ? 'sel' : ''}">
+        <input type="${q.multi ? 'checkbox' : 'radio'}" name="${q.id}" value="${c.value}" data-q="${q.id}" ${sel(c.value) ? 'checked' : ''}>
+        <span>${esc(c.label)}</span>
+      </label>`).join('')}
+  </div>`;
+}
+
+function resultView() {
+  const o = overall();
+  const issues = QUESTIONS.map(q => ({ q, st: evalQ(q) })).filter(x => needsFix(x.st));
+  const high = o.level === 'high';
+  const confirmed = S.teams.priv && S.teams.pc;
+  const canFinish = !high || confirmed;
+  return `
+  <h2>점검 결과${S.service.name ? ' · ' + esc(S.service.name) : ''}</h2>
+  <div class="banner">이 결과는 법적 판단이 아닌 사전 점검입니다. 모든 결과는 개인정보보호팀과 Privacy &amp; Compliance팀의 확인을 받아야 합니다.</div>
+  <div class="row" style="gap:18px">
+    <div><div class="sub">종합 위험도</div><div class="risk-big ${o.level}">${LV[o.level]}</div></div>
+    <div class="sub">${o.answered}/${o.total} 응답<br>보완 필요 ${issues.length}건 (미응답 포함)</div>
+  </div>
+  <div class="result-grid">
+    ${o.cats.map((e, i) => `<div class="tile">
+      <div class="name">${CATEGORIES[i].name}</div>
+      <span class="badge ${e.answered ? e.level : 'none'}">${e.answered ? '위험도 ' + LV[e.level] : '미응답'}</span>
+      <div class="sub" style="margin-top:6px">${e.answered}/${e.total} 응답</div>
+      <button style="margin-top:8px;padding:6px 12px;font-size:14px" data-action="goto" data-i="${i}">수정</button>
+    </div>`).join('')}
+  </div>
+  <h3>보완이 필요한 항목</h3>
+  ${issues.length ? issues.map(({ q, st }) => `<div class="fix ${st === 'high' ? 'high' : ''}">
+      <b>${st === 'high' ? '위험' : '보완 필요'} · ${esc(q.title)}</b>
+      ${st === 'blank' ? '아직 답하지 않았어요. ' : st === 'unk' ? '"모름"으로 답했어요. 담당자에게 확인해 주세요. ' : ''}${esc(q.fix)}
+    </div>`).join('') : '<p class="sub">보완이 필요한 항목이 없어요.</p>'}
+
+  <div class="confirm">
+    <h3>담당 부서 확인</h3>
+    <p class="sub">${high ? '위험도가 "상"이라 두 팀의 확인 없이는 "검토 완료"로 바꿀 수 없어요.' : '확인 내용을 기록해 두면 검토 요청에 도움이 돼요.'}</p>
+    <label><input type="checkbox" data-team="priv" ${S.teams.priv ? 'checked' : ''}> 개인정보보호팀 확인 받음</label>
+    <label><input type="checkbox" data-team="pc" ${S.teams.pc ? 'checked' : ''}> Privacy &amp; Compliance팀 확인 받음</label>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" data-action="done" ${canFinish ? '' : 'disabled'}>${S.done ? '검토 완료 상태 ✓' : '검토 완료로 표시'}</button>
+      ${S.done ? '<span class="badge low">검토 완료</span>' : ''}
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:20px">
+    <button data-action="goto" data-i="0">질문으로 돌아가기</button>
+    <button data-action="copy">리포트 복사 (마크다운)</button>
+    <button data-action="download">리포트 저장 (.md)</button>
+  </div>`;
+}
+
+/* ---------- 리포트 ---------- */
+function report() {
+  const o = overall();
+  const issues = QUESTIONS.map(q => ({ q, st: evalQ(q) })).filter(x => needsFix(x.st));
+  const L = [];
+  L.push(`# 개인정보 이슈 점검 결과${S.service.name ? ' - ' + S.service.name : ''}`, '');
+  L.push(`> 사전 점검 결과이며 법적 판단이 아닙니다. 최종 검토는 개인정보보호팀과 Privacy & Compliance팀의 확인이 필요합니다.`, '');
+  if (S.service.desc) L.push(`- 개인화 방식: ${S.service.desc}`);
+  L.push(`- 종합 위험도: **${LV[o.level]}**`, `- 응답: ${o.answered}/${o.total}`, `- 개인정보보호팀 확인: ${S.teams.priv ? '완료' : '미확인'}`, `- Privacy & Compliance팀 확인: ${S.teams.pc ? '완료' : '미확인'}`, '');
+  L.push('## 영역별 결과', '', '| 영역 | 응답 | 위험도 |', '|---|---|---|');
+  o.cats.forEach((e, i) => L.push(`| ${CATEGORIES[i].name} | ${e.answered}/${e.total} | ${e.answered ? LV[e.level] : '미응답'} |`));
+  L.push('', '## 보완이 필요한 항목', '');
+  if (!issues.length) L.push('- 없음');
+  issues.forEach(({ q, st }) => L.push(`- [${st === 'high' ? '위험' : '보완'}] ${q.title}${st === 'blank' ? ' (미응답)' : st === 'unk' ? ' (모름)' : ''}\n  - ${q.fix}`));
+  return L.join('\n');
+}
+
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; t.setAttribute('role', 'status');
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2200);
+}
+
+/* ---------- 이벤트 ---------- */
+const app = document.getElementById('app');
+app.addEventListener('click', async e => {
+  const b = e.target.closest('[data-action]'); if (!b) return;
+  const act = b.dataset.action;
+  if (act === 'begin') { S.screen = 'q'; }
+  else if (act === 'reset') { if (!confirm('입력한 내용을 모두 지우고 처음부터 시작할까요?')) return; S = blank(); }
+  else if (act === 'goto') { S.screen = 'q'; S.cat = +b.dataset.i; S.done = false; }
+  else if (act === 'prev') { S.cat = Math.max(0, S.cat - 1); }
+  else if (act === 'next') { S.cat = Math.min(CATEGORIES.length - 1, S.cat + 1); }
+  else if (act === 'finish') { S.screen = 'result'; }
+  else if (act === 'done') { S.done = true; }
+  else if (act === 'copy') {
+    try { await navigator.clipboard.writeText(report()); toast('리포트를 복사했어요'); } catch (err) { toast('복사하지 못했어요. 저장 버튼을 이용해 주세요'); }
+    return;
+  }
+  else if (act === 'download') {
+    const url = URL.createObjectURL(new Blob([report()], { type: 'text/markdown;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = '개인정보_점검결과.md'; a.click(); URL.revokeObjectURL(url);
+    return;
+  }
+  render(); window.scrollTo(0, 0);
+});
+
+app.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.q) {
+    const q = QUESTIONS.find(q => q.id === t.dataset.q);
+    if (q.multi) {
+      let cur = Array.isArray(S.answers[q.id]) ? S.answers[q.id].slice() : [];
+      if (t.checked) {
+        // 배타 선택지(통계만 사용 / 모름)는 다른 선택과 함께 둘 수 없음
+        const excl = ['none', 'unk'];
+        cur = excl.includes(t.value) ? [t.value] : cur.filter(v => !excl.includes(v)).concat(t.value);
+      } else cur = cur.filter(v => v !== t.value);
+      S.answers[q.id] = cur;
+    } else S.answers[q.id] = t.value;
+    S.done = false;
+    const y = window.scrollY; render(); window.scrollTo(0, y);
+  } else if (t.dataset.team) {
+    S.teams[t.dataset.team] = t.checked;
+    if (!(S.teams.priv && S.teams.pc) && overall().level === 'high') S.done = false;
+    const y = window.scrollY; render(); window.scrollTo(0, y);
+  }
+});
+
+app.addEventListener('input', e => {
+  const f = e.target.dataset.field;
+  if (f) { S.service[f] = e.target.value; save(); }
+});
+
+render();
+</script>
+</body>
+</html>
